@@ -1,0 +1,264 @@
+25/02/19
+select ename,nvl(to_char(mgr,'9999'),'CEO') as manager --mgr이 숫자열이기 떄문에 문자열을 받을 수 없어서 mgr을 to_char을 문자열로 변경후 nvl진행
+from emp
+where mgr is null;
+
+-- decode(값1, 비교갑1,결과값1,비교값2,결과값2,,,,defualt결과) : switch ~ case
+
+select empno,ename,job,sal,
+        decode(
+                job,
+                'MANAGER',sal *1,1,
+                'SALESMAN',sal *1.05,
+                'ANALYST',sal,
+                sal * 1.03
+        )as upsal
+from emp;
+
+-- case : if else ( 다중 조건문 )
+-- when 값 또는 조건식 then 결과1
+-- when 값 또는 조건식 then 결과2
+-- when 값 또는 조건식 then 결과3
+-- else 결과4
+-- end
+
+select empno,ename,comm,
+    case
+        when comm is null then '해당사항없음'
+        when comm = 0 then '성과급 못 받음'
+        when comm > 0 then '성과급 : ' || comm
+        else '결과없음'
+    end as comm_result
+from emp;
+
+-- 책 174,175 1
+select empno, rpad(substr(empno,1,2),length(empno),'*'),
+        ename, rpad(substr(ename,1,1),length(ename),'*') 
+from emp
+where length(ename) >= 5 and length(ename) <6;
+
+-- 2
+select empno,ename,sal,round(sal/21.5,1) as "DAY_PAY",round(sal/21.5/8,1) as "TIME_PAY"
+from emp;
+
+-- 3
+select empno,ename,hiredate,next_day(add_months(hiredate,3),'월요일') as "R_JOB",
+nvl(to_char(comm),'N/A') as comm
+from emp; 
+
+-- 4
+select empno,ename,mgr,
+    case
+        when mgr is null then '0000'
+        when substr(mgr,1,2) ='78' then '8888'
+        when substr(mgr,1,2) ='77' then '777'
+        when substr(mgr,1,2) ='76' then '6666'
+        when substr(mgr,1,2) ='75' then '5555'
+        else to_char(mgr)
+    end as chg_mgr
+from emp;
+
+-- 결과의 개수
+-- 단일행 함수 : 각 행에 각각 결과를 적용한다
+-- 다중행 함수 : 각 행에 결과를 하나의 값으로 만든다
+
+-- 다중행 함수(COUNT,SUM,AVG,MAX,MIN)
+
+select sal
+from emp;
+
+select sum(sal)
+from emp;
+
+select max(sal),min(sal)
+from emp;
+
+select avg(sal)
+from emp;
+
+select sum(comm)
+from emp;
+
+select count(*),count(job),count(distinct job),count(comm)
+from emp;
+
+select ename
+from emp;
+
+select ename, max(sal)  -- 다중행 함수와 단일 컬럼을 같이 사용할 수 없다
+from emp;
+
+select avg(sal) from emp where deptno = 10
+union
+select avg(sal) from emp where deptno = 20
+union
+select avg(sal) from emp where deptno = 30;
+
+select deptno, avg(sal) 
+from emp
+group by deptno;
+
+select deptno,job, avg(sal)
+from emp
+group by deptno,job
+order by deptno;
+
+select deptno,avg(sal)
+from emp
+group by deptno
+having avg(sal) > 2000  --부서 중 평균값이 2000이 넘는 부서만 나오게 할 떄
+order by deptno;
+
+select deptno,avg(sal)
+from emp
+group by deptno
+having deptno = 30; --30번 부서에 대한 정보만 보여달라 할 떄
+
+select deptno,avg(sal)
+from emp
+where avg(sal) > 2000;  --그룹함수(group by가 없기에) 사용 불가
+
+--------------------
+-- 동작 순서
+--select	 5 
+--from 	 1
+--where 	 2
+--group by	 3
+--having 	 4
+--order by   6
+
+-- 조인
+-- 두개 이상의 테이블을 사용하여 데이터를 조회
+-- 일반조일, 안시조인(표준조인)
+-- 두개의 테이블이 관계를 가지고 있어야 한다
+
+-- cross join
+-- equi join
+-- non equi join
+-- self join
+-- outer join 
+
+select *
+from emp;
+
+select *
+from dept;
+
+-- cross join
+select *
+from emp,dept;
+
+-- equi join(두개의 테이블의 공통컬럼을 등가 바교한다)
+select empno,ename,emp.deptno,dname,loc
+from emp,dept
+where emp.deptno = dept.deptno;
+
+-- 테이블 이름 별칭사용 가능(별칭 테이블 사용시 기존테이블명 사용불가)
+select empno,ename,e.deptno,dname,loc
+from emp e,dept d
+where e.deptno = d.deptno; -- emp e를 별칭으로 사용하고 dept를 d별칭 사용
+
+-- non equi join( 범위비교)
+
+select *
+from emp;
+
+select * 
+from salgrade;
+
+select empno,ename,sal,grade
+from emp,salgrade
+where emp.sal between salgrade.losal and salgrade.hisal;
+-- ==
+select empno,ename,sal,grade
+from emp e,salgrade s
+where e.sal between s.losal and s.hisal;    -- emp e를 별칭으로 사용 salgrade s동일
+
+-- self join(테이블 하나를 사용한다)
+
+select e.ename,e.job,e.deptno,m.ename
+from emp e, emp m
+where e.mgr = m.empno; 
+
+-- outer join(비교되지 않은 레코드도 포함해서 조회)
+-- 조인 조건절에 컬럼에(+) 기호를 붙인다(데이터가 없는쪽 컬럼)
+
+select e.ename,e.job,e.deptno,m.ename
+from emp e, emp m
+where e.mgr = m.empno(+); 
+
+
+select empno,ename,sal,e.deptno,d.deptno,dname,loc
+from emp e, dept d
+where e.deptno(+) = d.deptno;
+
+-- 기타조인
+
+select empno,ename,sal,e.deptno,d.deptno,dname,loc
+from emp e, dept d
+where e.deptno = d.deptno
+and ename = 'SCOTT';
+
+select empno,ename,e.deptno,dname,grade
+from emp e,dept d,salgrade s
+where e.deptno = d.deptno
+and e.sal between s.losal and s.hisal
+
+-- 안시조인(표준조인)
+
+select *
+from emp cross join dept;
+
+select empno,ename,emp.deptno,dname,loc
+from emp inner join dept    -- inner을 생략가능
+on emp.deptno = dept.deptno;
+
+-- innter join(등가,비등가,self 조인)
+select empno,ename,e.deptno,dname,loc
+from emp e inner join dept d    -- inner을 생략가능
+on e.deptno = d.deptno;
+
+select empno,ename,sal,grade
+from emp e inner join salgrade s
+on e.sal between s.losal and s.hisal;
+
+select e.empno,e.ename,m.ename
+from emp e inner join emp m
+on e.mgr = m.empno;
+
+-- outer join(left,right,full)
+select e.empno,e.ename,m.ename
+from emp e left outer join emp m
+on e.mgr = m.empno;     --있는 쪽 없는 쪽 구별 방법
+
+select empno,ename,sal,e.deptno,d.deptno,dname,loc
+from emp e right outer join dept d
+on e.deptno = d.deptno;
+
+-- 기타조인
+select empno,ename,e.deptno,dname,loc
+from emp e inner join dept d
+on e.deptno = d.deptno
+where e.ename = 'SCOTT';
+
+select empno,ename,deptno,dname,loc
+from emp e inner join dept d
+using(deptno);  
+--공통 컬럼 사용시 select 구문에 약자 e,d 제거 확인(어디서나 가져오는 값이 같기때문에),'using(공통컬럼)'으로 사용 가능
+
+-- 기타 조인 방식을 안시 조인 방식으로 변경
+select empno,ename,e.deptno,dname,grade
+from emp e,dept d,salgrade s
+where e.deptno = d.deptno
+and e.sal between s.losal and s.hisal;
+
+-- 안시 조인으로 변경
+select empno,ename,e.deptno,dname,grade
+from emp e inner join dept d 
+on e.deptno = d.deptno 
+inner join salgrade s
+on e.sal between s.losal and s.hisal;
+
+--  네추럴 조인
+select empno,ename,deptno,dname
+from emp e natural join dept d;
