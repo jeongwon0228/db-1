@@ -1,0 +1,447 @@
+250221
+
+insert into dept_copy
+values (70,'DATABASE');	
+-- 전체 컬럼과 다르게 입력 할 때에는 위에 컬럼에 밑의 갯수 만큼 표시해 줘야한다
+
+insert into dept_copy -- 전체컬럼에 값을 삽입하는 경우 생략 가능하다(deptno,dname,loc)
+values (60,'DEVOP','BUSAN');
+
+insert into dept_copy (deptno,dname) -- 나머지 컬럼은 묵시적으로 null 삽입
+values (70,'DATABASE');
+
+insert into dept_copy   -- 명시적으로 컬럼에 null 삽입 방법1
+values (70,'DATABASE',null);	
+
+insert into dept_copy   -- 명시적으로 컬럼에 null 삽입 방법2
+values (80,'DATABASE','');	
+
+insert into dept_copy
+values (70,'DATABASE');	
+
+insert into dept_copy (deptno,dname,loc)
+values ('90','DEVOP',1000);
+
+
+select *
+from dept_copy;
+
+create table emp_copy
+as
+select * from emp
+where 1 <> 1;
+
+select * 
+from emp_copy;
+
+desc emp_copy;
+
+insert into emp_copy (empno,ename,job,mgr,hiredate,sal,comm,deptno)
+values(1111,'hong','salesman',2222,'2025/02/21',100,null,10);
+
+insert into emp_copy (empno,ename,job,mgr,hiredate,sal,comm,deptno)
+values(2222,'kim','salesman',3333,sysdate,100,null,10);
+
+insert into emp_copy 
+values(3333,'lee','salesman',4444,sysdate,100,null,10);
+
+-- 서브쿼리를 사용한 데이터 삽입 
+-- insert 구문과 select 구문의 컬럼에 갯수와 타입이 일치해야한다.
+
+insert into emp_copy (empno,ename,job,mgr,hiredate,sal,comm,deptno)
+select empno,ename,job,mgr,hiredate,sal,comm,deptno
+from emp;
+
+insert into emp_copy (empno,ename,job,mgr,hiredate,sal,comm,deptno)
+select *
+from emp;
+
+insert into emp_copy(empno,ename,deptno)
+select empno,ename,deptno
+from emp
+where deptno = 20;
+-- empcopy 에 emp 컬럼에 deptno가 20인 컬럼의 empno,ename,deptno를 부분 삽입한다
+
+-- 다중 insert구문 사용하기
+-- 
+
+insert all
+into emp_copy (empno,ename,job,mgr,hiredate,sal,comm,deptno) values (1111,'hong','salesman',2222,'2025/02/21',100,null,10)
+into emp_copy (empno,ename,job,mgr,hiredate,sal,comm,deptno) values (2222,'kim','salesman',3333,sysdate,100,null,10)
+into emp_copy (empno,ename,job,mgr,hiredate,sal,comm,deptno) values (3333,'lee','salesman',4444,sysdate,100,null,10)
+select * from dual;
+
+--위 다중 구문을 밑의 컬럼으로 생략하여 줄일수 있다
+insert all
+into emp_copy values (1111,'hong','salesman',2222,'2025/02/21',100,null,10)
+into emp_copy values (2222,'kim','salesman',3333,sysdate,100,null,10)
+into emp_copy values (3333,'lee','salesman',4444,sysdate,100,null,10)
+select * from dual;
+
+-- emp의 정보를 emp_copy 에 전부 삽입한다
+insert all
+into emp_copy
+selec * from emp;
+
+-- 위의 식을 서브 쿼리문으로 변환 한 것 (내용은 같다) 
+insert into emp_copy (empno,ename,job,mgr,hiredate,sal,comm,deptno)
+select *
+from emp;
+
+select * 
+from emp_copy;
+
+-- update 구문
+-- 컬럼 단위로 데이터 수정
+
+create table dept_copy2
+as
+select * from dept;
+
+--update 테이블명
+--set 컬럼명1 = 값1,컬럼명2 = 값2,,,,,,,
+--where 조건식
+
+select  *
+from dept_copy2;
+
+update dept_copy2
+set loc = 'SEOUL'  --where이 없을 때 앞 set에 해당하는 전체 컬럼을 수정한다
+where deptno = 40;  -- 지정한 deptno 1개의 값을 수정한다
+
+update dept_copy2
+set dname = 'DATEBASE',loc = 'BUSAN'
+where deptno = 30;
+
+-- 서브쿼리문 사용하기
+update dept_copy2
+set (dname,loc) = (
+                    select dname,loc
+                    from dept
+                    where deptno = 40
+    )
+where deptno = 20;
+-- dept의 deptno 40의 정보를 dept_copy의 deptno 20에 정보로 수정한다
+
+
+rollback;   -- 수정 시킨것이 잘못 됐다고 했을때 데이터를 수정 이전상태로 원복시키는 것
+
+select  *
+from dept_copy2;
+
+create table emp_copy3
+as
+select * from emp;
+
+select * 
+from emp_copy2
+where deptno = 20;
+
+-- JOB이 ANALYST인 사원과 같은 부서에 근무하는 사원들의 사번 급여를 5000으로 변경한다.
+
+select * 
+from emp_copy2
+where deptno = 20;
+
+select distinct b.empno
+from emp a, emp b
+where a.job = 'ANALYST'
+and a.deptno = b.deptno
+and b.ename<> 'SCOTT'
+and b.ename<> 'FORD'
+and b.job <> 'ANALYST';
+
+update emp_copy2
+set sal = 5000
+where empno in (
+            select distinct b.empno
+from emp a, emp b
+where a.job = 'ANALYST'
+and a.deptno = b.deptno
+and b.ename<> 'SCOTT'
+and b.ename<> 'FORD'
+and b.job <> 'ANALYST'
+);
+
+-- delete 구문
+
+--delete from 테이블명
+--where 조건식
+
+delete from emp_copy2  -- 전체 데이터 삭제 하려면 where절 없이 가능
+where deptno = 30;  -- 조건 deptno가 30번인 데이터만 삭제 조건을 붙여 삭제할 시 where절 붙임
+
+delete from emp_copy2 
+where empno in (
+        select e.empno
+        from emp e, salgrade s
+        where e.sal between s.losal and s.hisal
+        and s.grade = 3
+        and e.deptno = 30
+);
+
+
+rollback;
+
+select *
+from emp_copy2;
+
+-- 287,289 문제
+
+--1
+create table chap10hw_emp as select * from emp;
+create table chap10hw_dept as select * from dept;
+create table chap10hw_salgrade as select * from salgrade; 
+
+select *
+from chap10hw_dept;
+
+insert all
+into chap10hw_dept values (50,'ORACLE','BUSAN')
+into chap10hw_dept values (60,'SQL','ILSAN')
+into chap10hw_dept values (70,'SELECT','INCHEON')
+into chap10hw_dept values (80,'DML','BUNDANG')
+select * from dual; 
+
+
+--2
+select * 
+from chap10hw_emp;
+
+insert all
+into chap10hw_emp values (7201,'TEST_USER1','MANAGER',7788,'2016/01/02',4500,null,50)
+into chap10hw_emp values (7202,'TEST_USER2','CLERK',7201,'2016/02/21',1800,null,50)
+into chap10hw_emp values (7203,'TEST_USER3','ANALYST',7201,'2016/04/11',3400,null,60)
+into chap10hw_emp values (7204,'TEST_USER4','SALESMAN',7201,'2016/05/31',2700,'300',60)
+into chap10hw_emp values (7205,'TEST_USER5','CLERK',7201,'2016/07/20',2600,null,70)
+into chap10hw_emp values (7206,'TEST_USER6','CLERK',7201,'2016/09/08',2600,null,70)
+into chap10hw_emp values (7207,'TEST_USER7','LECTURER',7201,'2016/01/28',2300,null,80)
+into chap10hw_emp values (7208,'TEST_USER8','STUDENT',7201,'2018/03/09',1200,null,80)
+select * from dual;
+
+--3
+
+update chap10hw_emp
+set deptno = 70
+where sal > (
+select avg(sal)
+from chap10hw_emp
+where deptno = 50
+);
+
+select *
+from chap10hw_emp;
+
+--4
+--단일행
+update chap10hw_emp
+set sal = sal*1.1,deptno = 80
+where hiredate > (
+select min(hiredate)
+from  chap10hw_emp
+where deptno = 60
+);
+
+select *
+from chap10hw_emp;
+
+-- 다중행
+update chap10hw_emp
+set sal = sal*1.1,deptno = 80
+where hiredate > any (
+select min(hiredate)
+from  chap10hw_emp
+where deptno = 60
+);
+
+-- 5
+delete from chap10hw_emp
+where empno in (
+select empno
+from chap10hw_emp
+where e.sal between s.losal and s.hisal
+and s.grade = 5
+);
+
+-- 트랜직션(TX)
+-- 테이블의 작업한 데이터를 최종적으로 반영할지 말지를 결정하는 개념
+-- SQL 구문의 작업의 단위
+-- insert, update, delete 논리적으로 묶는 잡업
+-- commit : 테이블에 변경된 작업내용 반영
+-- rollback : 작업이전 상태로 원복한다(기준점은 이전 commit까지 )
+-- 자동으로 commit : create table 실행시
+-- 자동으로 rollback : 자연재해,정전
+
+-- 객체생성,변경,삭제
+-- create 객체종류
+-- alter 객체종류
+-- drop 객체종류
+
+--타입
+-- 숫자 : number,number(10),number(10,2)
+-- 문자 : varchar2(10):가변,char(10):고정
+-- 날짜 : date,tinestmp
+
+-- 부서 : 부서번호,부서명,근무지
+
+create table dept_temp(
+    deptno number(2),
+    dname varchar2(10),
+    loc varchar2(10)    -- 마지막 컬럼은,을 생략한다.
+);
+
+-- table의 변경대상은 컬럼이다
+--alert table dept_temp
+--add               --추가
+--rename column     --이름 수정
+--modify            --크기, 타입 변경
+--drop column       --삭제
+
+--추가
+alter table dept_temp
+add manager_id varchar2(20);
+
+-- 수정
+alter table dept_temp
+rename column manager_id to managerid;
+
+--변경
+alter table dept_temp
+modify managerid number(10);    --타입변경시에는 값이 있어야 한다.
+
+--삭제
+alter table dept_temp
+drop column managerid;
+
+-- 테이블 명 변경
+select * from dept_temp_rename;
+
+rename dept_temp to dept_temp_rename;
+
+rename dept_temp_rename to dept_temp;
+
+select * from dept_temp;
+
+
+-- 테이블 삭제
+drop table dept_temp;
+
+select * from dept_temp;
+
+-- 휴지통 패스
+drop table dept_temp purge;
+
+-- 휴지통 보기
+select *
+from user_recyclebin;
+
+-- 휴지통 복구
+flashback table dept_temp to before drop;
+
+-- 휴지통 비우기
+purge recyclebin;
+
+
+
+
+
+
+select * from dept;
+
+insert all
+into dept_temp values (10,'ACCOUNTING','NEW YORK')
+into dept_temp values (20,'RESARCH','DALLAS')
+into dept_temp values (30,'SALES','CHICHAGO')
+into dept_temp values (40,'OPERATIONS','BOSTON')
+select * from dual;
+
+select * from dept_temp;
+
+commit;
+
+-- 서브쿼리문을 테이블 생성
+create table dept_temp2
+as
+select * from dept;
+
+select * from detpt_temp2;
+
+create table dept_temp3
+as
+select * from dept
+where 1 <> 1;   -- 테이블의 구조만 필요할때 작성하는 조건식
+
+
+
+select * 
+from emp
+where 1 = 1 -- 항상 참인 조건 : 전체 데이터 조회
+and ename = 'SCOTT'
+and  empno = 7788;
+
+create table dept_copy3
+as
+select * from dept;
+
+select *
+from dept_copy3;
+
+delete from dept_copy3
+
+commit;
+
+select * 
+from dept_copy3;
+
+rollback;
+
+create table dept_copy4
+as
+select * from dept;
+
+select *
+from dept_copy4;
+
+delete from dept_copy4
+where deptno = 10 or deptno = 20;
+
+commit;
+
+delete from dept_copy4
+where deptno = 30 or deptno = 40;
+
+rollback;
+
+select * 
+from dept_copy4;
+
+-- 324
+--1
+create table emp_hw( 
+ empno  number(4),
+ ename varchar2(10),
+ job varchar2(9),
+ mgr number(4),
+ hiredate date,
+ sal number(7,2),
+ comm number(7,2),
+ deptno number(2)
+ );
+
+alter table emp_hw
+add bigo varchar2(20);
+
+alter table emp_hw
+modify bigo varchaar2(30);
+
+alter talbe emp_hw
+rename column gigo to remark;
+
+insert into emp_hw
+select empno,ename,job,mgr,hiredate,sal,comm,deptno,null
+from emp;
+
+drop delete emp_hw;
+
+select * 
+from emp_hw;
