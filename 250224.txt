@@ -1,0 +1,339 @@
+250224
+
+-- 제약조건
+-- 컬럼에서 사용가능한 데이터를 제한한다.(무결성)
+-- 컬럼은 기본적으로 모두 null 이다
+-- not null : 반드시 값이 있어야 한다
+-- unique : 유일한 값 이어야 한다
+-- primary key => not null + nuique(기본키) 
+-- foreign key => 참조키(두개의 테이블의 관계를 이용하는것)
+-- check : 값의 범위를 제약한다
+-- default : 기본값 설정하기
+
+create table dept_temp4(
+ deptno number(2) not null,
+ dname varchar2(10) not null,
+ loc varchar2(10) not null
+ );
+
+insert  into dept_temp4
+values(10,null,'seoul');    --NULL을 ("SCOTT"."DEPT_TEMP4"."DNAME") 안에 삽입할 수 없습니다
+
+insert  into dept_temp4(deptno,dname)
+values(10,'devp'); --NULL을 ("SCOTT"."DEPT_TEMP4"."LOC") 안에 삽입할 수 없습니다
+
+-- 데이터 사전
+desc user_constraints;
+-- OWNER, CONSTRAINT_NAME, CONSTRAINT_TYPE, TABLE_NAME
+
+select OWNER, CONSTRAINT_NAME, CONSTRAINT_TYPE, TABLE_NAME
+from user_constraints;
+
+-- c - not null, check
+-- p - primary key
+-- u - unique
+-- r - foreign key
+
+
+-- 제약조건명
+create table dept_temp5(
+ deptno number(2) constraint dept_temp2_deptno_nn not null,
+ dname varchar2(10) constraint dept_temp2_dname_nn not null,
+ loc varchar2(10) constraint dept_temp2_loc_nn not null
+ );
+
+insert into dept_temp5(deptno,dname)
+values(10,'devp');
+
+
+
+create table dept_temp6(
+ deptno number(2),
+ dname varchar2(10),
+ loc varchar2(10)
+ );
+
+-- 제약조건 추가하기
+alter table dept_temp6
+modify (deptno constraint dept_temp6_deptno_nn not null);
+
+-- 제약조건 삭제하기()없이 사용
+alter table dept_temp6
+drop constraint dept_temp6_deptno_nn;
+
+
+-- unique
+-- null에 대한 중복은 허용한다.
+
+drop table dept_temp7;
+
+create table dept_temp7(
+    deptno number(2) constraint dept_temp7_deptno_uk unique not null,
+    dname varchar2(10),
+    loc varchar2(10)
+);
+
+insert into dept_temp7
+values (10,'devp','seoul');
+
+insert into dept_temp7
+values (10,'database','busan');     -- 무결성 제약 조건(SCOTT.SYS_C0011117)에 위배됩니다
+                                    -- 무결성 제약 조건(SCOTT.DEPT_TEMP7_DEPTNO_UK)에 위배됩니다
+
+insert into dept_temp7
+values(null,'devp','seoul');
+
+insert into dept_temp7
+values(null,'devp','seoul');
+
+alter table dept_temp7
+add constraint dept_temp7_dname_uk unique (dname);
+
+alter table dept_temp7
+drop constraint dept_temp7_dname_uk;
+
+select * from dept_temp7;
+
+-- primary key
+
+create table dept_temp8(
+    deptno number(2) constraint dept_temp8_deptno_pk primary key,   -- 기본키
+    dname varchar2(10),
+    loc varchar2(10)
+);
+
+insert into dept_temp8
+values (10,'database','busan');
+
+insert into dept_temp8
+values (10,'database','busan');
+
+insert into dept_temp8
+values (20,'dimseom','seoul');  -- 무결성 제약 조건(SCOTT.DEPT_TEMP8_DEPTNO_PK)에 위배됩니다
+
+insert into dept_temp8
+values (null,'dimseom','busan');    -- NULL을 ("SCOTT"."DEPT_TEMP8"."DEPTNO") 안에 삽입할 수 없습니다
+
+
+-- check 
+create table emp_temp1(
+    empno number(4),
+    ename varchar2(10),
+    sal number(5) constraint emp_temp1_sal_uk check (sal between 800 and 5000)
+);
+
+insert into emp_temp1
+values (1111,'hong',1000);
+
+insert into emp_temp1
+values (1111,'hong',1000);
+
+insert into emp_temp1
+values (2222,'kim',500);    -- 체크 제약조건(SCOTT.EMP_TEMP1_SAL_UK)이 위배되었습니다
+
+-- default
+create table emp_temp2(
+    empno number(4),
+    ename varchar2(10),
+    sal number(5) default 0
+);
+
+insert into emp_temp2 (empno,ename)
+values (2222,'kim');    -- sal 값이 없을때는 default 지정한 값이 들어간다
+
+insert into emp_temp2 (empno,ename)
+values (2222,'kim',100);   -- 값을 작성 했을 때는 default를 무시하고 우선적으로 적용한다
+
+select * from emp_temp2;    
+
+select OWNER, CONSTRAINT_NAME, CONSTRAINT_TYPE, TABLE_NAME
+from user_constraints
+where TABLE_NAME like '%DEPT%';
+
+insert into emp
+values (1111,'hong','database',2222,sysdate,800,null,50);
+-- 무결성 제약조건(SCOTT.FK_DEPTNO)이 위배되었습니다- 부모 키가 없습니다
+
+-- foreign key
+drop table emp_temp3;
+
+create table emp_temp3(
+    empno number(4) ,
+    ename varchar(20),
+    sal number(5),
+    deptno number(2) constraint emp_temp3_deptno_fk references dept_ref(deptno) 
+);
+
+-- 서브쿼리로 만든 테이블은 제약 조건이 없다
+-- 별도로 제약조건을 추가 해야한다
+drop table dept_ref;
+
+create table dept_ref
+as
+select * from dept;
+
+alter table dept_ref
+add constraint dept_ref_deptno_pk primary key(deptno);
+
+insert into emp_temp3
+values (1111,'hong',800,10);    
+
+insert into emp_temp3
+values (1111,'hong',800,50);    
+-- 무결성 제약조건(SCOTT.SYS_C0011128)이 위배되었습니다- 부모 키가 없습니다
+
+
+-- 제약조건을 적용하는 2가지 방식
+-- 컬럼 레벨 방식
+-- 테이블 레벨
+    -- (테이블 안에서 처리하는 방식,alter명령어를 사용하는 방식)
+    -- not null은 레발 방식만 가능 하다.
+    
+create table emp_temp4(
+    
+    empno       number(4),
+    ename       varchar2(10) constraint emp_temp4_empno not null,
+    job         varchar2(9),
+    mgr         number(4),
+    hiredate    date default sysdate,
+    sal         number(7,2) constraint emp_temp4_sal not null,
+    comm        number(7,2),
+    deptno      number(2) constraint emp_temp4_deptno not null,
+    
+    constraint emp_temp4_empno primary key(empno),
+    constraint emp_temp4_sal check(sal 500 between 5000),
+    constraint emp_temp4_deptno foreign key(deptno) references dept_ref(deptno) on delete cascade
+  
+);
+
+
+CREATE TABLE emp_temp5 (
+    empno       NUMBER(4),
+    ename       VARCHAR2(10),
+    job         VARCHAR2(9),
+    mgr         NUMBER(4),
+    hiredate    DATE,
+    sal         NUMBER(7,2),
+    comm        NUMBER(7,2),
+    deptno      NUMBER(2)
+);
+
+alter table emp_temp5
+modify ename constraint emp_temp5_ename_nn not null;
+
+alter table emp_temp5
+modify sal constraint emp_temp5_sal_nn not null;
+
+alter table emp_temp5
+modify deptno constraint emp_temp5_deptno_nn not null;
+
+alter table emp_temp5
+add constraint constraint emp_temp5_empno_pk primary key(empno);
+
+alter table emp_temp5
+add constraint constraint emp_temp5_sal_ck check(sal between 500 and 5000);
+
+alter table emp_temp5
+add constraint emp_temp5_deptno_fk foreign key(deptno) references dept_ref(deptno);
+-- 참조 제약이 이미 테이블에 존재합니다
+
+delete from dept
+where deptno = 30; --무결성 제약조건(SCOTT.FK_DEPTNO)이 위배되었습니다- 자식 레코드가 발견되었습니다
+
+-- index
+-- 컬럼에 생성하는 객체
+-- 검색 속도 향상(select)
+-- 전체 데이터의 3~5%시 효과가 있음
+-- primary key 한 컬럼은 index객체가 자동으로 적용
+
+select * from user_indexes;
+
+select * 
+from emp
+where empno = 7788; -- empno 인덱스 객체임
+
+select * 
+from emp
+where empno = 'SCOTT';  -- ename 인덱스 객체가 아님
+
+create index idx_emp_sal
+on emp(sal);
+
+select * 
+from emp
+where sal >= 3000;
+
+-- VIEW객체(가상 테이블)
+-- 기존 테이블을 사용하여 만든 쿼리문
+-- 생성해서 사용하는 뷰, 인라인 뷰
+-- 기존 테이블에서 일부 정보를 보기위한 용도
+-- c.r.u.d가 가능하다.(원본테이블이 변경된)
+
+create or replace view view_emp_dept30 -- 권한이 불충분합니다
+as
+select * from emp
+where deptno = 30
+and sal >= 2000;
+
+select *
+from view_emp_dept30;
+
+select *
+from user_views;
+
+create table emp_temp9
+as
+select * from emp;
+
+
+drop view view_emp_deptno20;
+
+create or replace view view_emp_deptno20 
+as
+select * from emp_temp9
+Where deptno = 20
+--with check option; -- 조건절의 컬럼에 대한 변경작업 불가
+with read only; -- 모든 컬럼에 대한 변경 작업 불가
+
+update view_emp_deptno20  -- view의 with check option의 조건에 위배 됩니다
+set deptno = 40     -- 읽기 전용 view에서는 DML 작업을 수행할 수 없습니다.
+where deptno = 20;
+
+select * from view_emp_deptno20;
+
+create or replace view emp_dept_salgrade
+as
+select ename,sal,e.deptno,dname,grade
+from emp e inner join dept d
+on e.deptno = d.deptno
+inner join salgrade s
+on e.sal between s.losal and s.hisal;
+
+select *
+from emp_dept_salgrade;
+
+select ename,hiredate
+from emp
+order by hiredate asc;
+
+select ename,hiredate
+from emp
+where hiredate <= '81/05/01';
+
+-- rownum 컬럼
+select rownum,ename,hiredate
+from emp;
+
+select rownum,ename,hiredate
+from emp
+--where rownum <= 5 
+order by hiredate;  -- 순서가 from 다음 where이여서 where절이 실행 후 순서를 orderby절이 받아 사람이 다르게 나온다
+
+create or replace view emp_hiredate
+as
+select * from emp
+order by hiredate asc;
+
+select rownum,ename,hiredate
+from emp_hiredate
+where rownum <= 5;
