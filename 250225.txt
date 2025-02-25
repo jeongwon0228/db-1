@@ -1,0 +1,337 @@
+250225
+
+-- 인라인뷰
+
+select rownum,ename,hiredate
+from emp_hiredate
+where rownum <= 5;
+
+
+select rownum, h1.* -- 단독으로 *(전체)는 사용 불가이고 from의 별칭(h1).*은 전체 컬럼 조회로 사용 가능하다
+from (
+    select *
+    from emp
+    order by hiredate asc 
+)h1
+where rownum <= 5;  --위의 create뷰를 인라인뷰로 변경 시킨 것
+
+
+-- 입사 먼저 순위 2~4명 나오게 하기
+select rownum, h2.* 
+from (
+    select *
+    from emp
+    order by hiredate asc 
+)h2
+where rownum >=1 and rownum <= 4 ;  -- where절에서 rownum은 1부터 다시 시작이기에 1로 시작함, 숫자2를 넣을시 아무 컬럼도 나오지 않음
+
+
+select rm,h3.* -- rownum은 사용 할 떄 마다 계속 새로운 rownum을 만든다
+from (
+            select rownum rm, h2.* -- 기존rownum을 사용하기위해 별칭(rm)으로 만듦
+            from (
+                select *
+                from emp
+                order by hiredate asc 
+            )h2
+    )h3
+where rm >=2 and rm <= 4 ; 
+
+
+-- 기본키(primary key)
+-- 시퀀스 객체(sequence) : 값을 중복없이 순차적으로 만들어주는 역활 
+--create sequence 시퀀스명
+--increment by n  -- 한번에 증가하는 값의 범위(기본은 1씩 증가)
+--start with n    -- 시작하는 값(기본은 1)
+
+--사용방법
+--시퀀스명.nextval
+--시퀀스명.currval
+
+drop table dept_sequence;
+
+create table dept_sequence
+as
+select *
+from dept
+where 1<>1 ;
+
+drop sequence seq_dept;
+create sequence seq_dept
+increment by 10
+start with 10;
+
+insert into dept_sequence
+values(seq_dept.nextval ,'ACCOUNTING','NEW YORK');
+
+insert into dept_sequence
+values (seq_dept.nextval,'RESEARCH','DALLAS');
+
+insert into dept_sequence
+values (seq_dept.nextval,'SALES','CHICAGO');
+
+insert into dept_sequence
+values (seq_dept.nextval,'OPERATIONS','BOSTON');
+
+select * from dept_sequence;
+
+create table emp_sequence
+as
+select empno,ename,sal from emp
+where 1<> 1;
+
+desc emp_sequence;
+
+alter table emp_sequence
+modify empno varchar2(15);
+
+create sequence emp_seq;
+
+insert into emp_sequence
+values('S2025000'||emp_seq.nextval,'hing',1000);
+
+insert into emp_sequence
+values('S2025000'||emp_seq.nextval,'kim',1000);
+
+select * from emp_sequence;
+
+
+-- 롤관리
+사전에 정의된 롤(connect,resource,dba)
+사용자 정의 롤
+
+-- 관계 데이터 모델
+
+도서(도서번호,도서이름,출판사,가격) => book
+
+주문(주문번호,도서번호,고객번호,판매가격,주문일자) =>orders	ERD
+
+고객(고객번호,이름,주민번호,주소,연락처) => customer	
+
+create user book identified by 1234;
+grant connect,resource
+to book;
+
+create
+
+create user orclstudy identified by 1234;   -- 계정 만들기
+
+-- 권한의 종류
+-- 시스템 권한
+-- 객체 권한
+
+
+grant create session     -- 계정의 권한 주기
+to orclstudy;
+
+grant create table
+to orclstudy;
+
+grant create view
+to orclstudy;
+
+grant create session , create table, create view  -- 한거번에 묶어서 권한 부여도 가능하다 ,를 꼭 참조하여야 한다 
+to orclstudy;
+
+revoke create table  -- 권한을 빼앗기
+from orclstudy;
+
+
+create user orclstudy2 identified by 1234;
+
+grant connect, resource
+to orclstudy2;
+
+create role mrole;
+
+grant create session , create table, create view    -- 사용자 정의 롤 만들기
+to mrole;
+
+
+create user orclstudy3 identified by 1234;
+
+grant mrole     -- 사용자 정의 롤
+to orclstudy3;
+
+revoke mrole    -- 권한을 회수하여 일시적 삭제
+from orclstudy3
+
+drop orclstudy3 mrole;  -- roll권한을 받았던 계정의 권한을 영구적 삭제 
+
+
+create user book identified by 1234;
+grant connect,resource
+to book;
+
+
+alter user orclstudy identified by 1234 account lock; -- 만들어진 계정의 수정 : lock 는 사용자가 풀기 전까지 열지 못하게 잠구는 것
+
+drop user orclstudy; -- 계정 삭제
+
+select * from all_users;    -- 생성 되어있는 계정 정보
+
+--book
+create table book(
+    bookid number(10) primary key,
+    bookname varchar2(40),
+    publisher varchar2(40),
+    price number(10)
+);
+
+create table customer(
+    custid number(10) primary key,
+    name varchar2(40),
+    address varchar(50),
+    phone varchar(20)
+);
+
+create table orders(
+    orderid number(10) primary key,
+    custid number(10),
+    bookid number(10),
+    sellprice number(10),
+    orderdate date,
+    
+    foreign key(custid) references customer(custid),
+    foreign key(bookid) references book(bookid)
+);
+delete from book;
+
+INSERT INTO Book VALUES(1, '축구의 역사', '굿스포츠', 7000);
+INSERT INTO Book VALUES(2, '축구 아는 여자', '나무수', 13000);
+INSERT INTO Book VALUES(3, '축구의 이해', '대한미디어', 22000);
+INSERT INTO Book VALUES(4, '골프 바이블', '대한미디어', 35000);
+INSERT INTO Book VALUES(5, '피겨 교본', '굿스포츠', 8000);
+INSERT INTO Book VALUES(6, '배구 단계별기술', '굿스포츠', 6000);
+INSERT INTO Book VALUES(7, '야구의 추억', '이상미디어', 20000);
+INSERT INTO Book VALUES(8, '야구를 부탁해', '이상미디어', 13000);
+INSERT INTO Book VALUES(9, '올림픽 이야기', '삼성당', 7500);
+INSERT INTO Book VALUES(10, 'Olympic Champions', 'Pearson', 13000);
+
+select * from book;
+
+INSERT INTO Customer VALUES (1, '박지성', '영국 맨체스타', '000-5000-0001');
+INSERT INTO Customer VALUES (2, '김연아', '대한민국 서울', '000-6000-0001'); 
+INSERT INTO Customer VALUES (3, '김연경', '대한민국 경기도', '000-7000-0001');
+INSERT INTO Customer VALUES (4, '추신수', '미국 클리블랜드', '000-8000-0001');
+INSERT INTO Customer VALUES (5, '박세리', '대한민국 대전',  NULL);
+
+select * from customer;
+
+
+INSERT INTO Orders VALUES (1, 1, 1, 6000, TO_DATE('2024-07-01','YYYY-mm-dd'));
+INSERT INTO Orders VALUES (2, 1, 3, 21000, TO_DATE('2024-07-03','YYYY-mm-dd'));
+INSERT INTO Orders VALUES (3, 2, 5, 8000, TO_DATE('2024-07-03','YYYY-mm-%dd'));
+INSERT INTO Orders VALUES (4, 3, 6, 6000, TO_DATE('2024-07-04','YYYY-mm-dd'));
+INSERT INTO Orders VALUES (5, 4, 7, 20000, TO_DATE('2024-07-05','YYYY-mm-dd'));
+INSERT INTO Orders VALUES (6, 1, 2, 12000, TO_DATE('2024-07-07','YYYY-mm-dd'));
+INSERT INTO Orders VALUES (7, 4, 8, 13000, TO_DATE( '2024-07-07','YYYY-mm-dd'));
+INSERT INTO Orders VALUES (8, 3, 10, 12000, TO_DATE('2024-07-08','YYYY-mm-dd'));
+INSERT INTO Orders VALUES (9, 2, 10, 7000, TO_DATE('2024-07-09','YYYY-mm-dd'));
+INSERT INTO Orders VALUES (10, 3, 8, 13000, TO_DATE('2024-07-10','YYYY-mm-dd'));
+
+select * from orders;
+
+commit;
+
+-- 후보키 : 컬럼들 중에 유일한 값을 가지는 키
+-- 기본키 : 유일한 값을 가지는 컬럼
+-- 대리키 : 기본키 컬럼이 없을때 직접 컬럼을 정의
+-- 대처키 : 컬럼들 중에 기본키로 사용할 수 있으나 선정되지 않은 컬럼
+
+-- 모든 도서의 이름과 가격을 검색하시오.
+
+select bookname,price
+from book;
+
+-- 도서테이블에 모든 출판사를 검색 단 중복되지 않게 한다
+
+select distinct publisher
+from book;
+
+-- 가격이 10000 이상 20000 이하인 도서를 검색
+
+select * 
+from book
+where price between 10000 and 20000;
+-- where price >= 10000 and price <=20000;
+
+--  도서 이름에 '축구'가 포함된 출판사름 검색
+
+select publisher, bookname
+from book
+where bookname like '%축구%';
+
+-- 축구에 관한 도서중 가격이 20000원 이상인 도서를 검색하세요
+
+select *
+from book
+where bookname like '%축구%' and price >= 20000 ;
+
+-- 도서를 가격으로 내림차순으로 검색하고, 가격이 같으면 출판사를 오름차순 검색
+select *
+from book
+order by price desc, publisher asc;
+
+-- 고객별로 주문한 도서의 총 수량과 총 판매액을 구하시오.
+
+select custid, count(*) as 도서수량, sum(sellprice) as 총액
+from orders
+group by custid
+order by custid;
+
+-- 가격이 8000이상인 도서를 구매한 고객에 대하여 고객별 주문 도서의 총 수량을 구하시오
+-- 단 2권 이상일 경우
+
+select custid, count(*) as 도서수량
+from orders
+where sellprice >= 8000
+group by custid
+having count(*) >=2 ;
+
+-- 고객의 이름과 고객이 주문한 도서의 판매가격을 검색
+select name, sellprice
+from customer, orders
+where customer.custid = orders.custid;
+
+-- 고객의 이름과 고객이 주문한 도서의 이름을 검색
+select customer.name,book.bookname
+from customer,orders,book
+where customer.custid = orders.custid
+and book.bookid = orders.bookid;
+
+-- 가장 비싼 도서의 이름을 검색
+select bookname
+from book
+where price=(select max(price) from book);
+
+-- 도서를 구매한 적이 없는 고객 이름 검색
+select name
+from customer
+where custid not in (select custid from orders);
+
+-- 대한미디어에서 출판한 도서를 구매한 고객의 이름을 검색
+select name
+from customer
+where custid in (select custid
+                from orders
+                where bookid in(select bookid
+                                from book
+                                where publisher='대한미디어'));
+
+-- 출판사별로 출판사의 평균 도서가격보다 비싼 도서를 검색
+select b1.bookname
+from book b1
+where b1.price > (select avg(b2.price) from book b2 where b2.publisher=b1.publisher);
+
+-- 대한 민국에 거주하는 고객이름과 도서를 주문한 고객의 이름을 같이 검색
+select name
+from customer 
+where address like '%대한민국%'
+union
+select name 
+from customer
+where custid in (
+    select custid
+    from orders
+    );
